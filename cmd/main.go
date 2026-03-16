@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -8,15 +9,39 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: quantify <model-name>")
+	debug := flag.Bool("debug", false, "Print debug information")
+	ollamaURL := flag.String("ollama-url", "", "Custom Ollama URL")
+	huggingfaceURL := flag.String("hf-url", "", "Custom HuggingFace URL")
+	flag.Parse()
+
+	if flag.NArg() < 1 {
+		fmt.Println("Usage: quantify [options] <model-name>")
+		fmt.Println("Options:")
+		flag.PrintDefaults()
 		fmt.Println("Example: quantify qwen2.5:7b")
 		fmt.Println("         quantify hf.co/TeichAI/Qwen3-4B")
 		os.Exit(1)
 	}
 
-	model := os.Args[1]
-	info, err := quantify.GetModelInfo(model)
+	model := flag.Arg(0)
+
+	cfg := quantify.Config{
+		OllamaURL:      *ollamaURL,
+		HuggingFaceURL: *huggingfaceURL,
+		Debug:          *debug,
+	}
+
+	if *debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Fetching model: %s\n", model)
+		if cfg.OllamaURL != "" {
+			fmt.Fprintf(os.Stderr, "[DEBUG] Using Ollama URL: %s\n", cfg.OllamaURL)
+		}
+		if cfg.HuggingFaceURL != "" {
+			fmt.Fprintf(os.Stderr, "[DEBUG] Using HuggingFace URL: %s\n", cfg.HuggingFaceURL)
+		}
+	}
+
+	info, err := quantify.GetModelInfoWithConfig(model, cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

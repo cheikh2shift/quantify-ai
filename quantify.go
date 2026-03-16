@@ -5,10 +5,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+// Config contains configuration options for the SDK.
+type Config struct {
+	// OllamaURL is the base URL for Ollama library (e.g., "https://ollama.com/library")
+	// If empty, defaults to "https://ollama.com/library"
+	OllamaURL string
+
+	// HuggingFaceURL is the base URL for HuggingFace API (e.g., "https://huggingface.co/api/models")
+	// If empty, defaults to "https://huggingface.co/api/models"
+	HuggingFaceURL string
+
+	// Debug enables debug output to stderr
+	Debug bool
+}
 
 // ModelInfo contains information about a model.
 type ModelInfo struct {
@@ -18,21 +33,27 @@ type ModelInfo struct {
 }
 
 // GetModelInfo fetches model information from Ollama library or HuggingFace.
+// Uses default config values for URLs.
+func GetModelInfo(model string) (*ModelInfo, error) {
+	return GetModelInfoWithConfig(model, Config{})
+}
+
+// GetModelInfoWithConfig fetches model information from Ollama library or HuggingFace.
 // For Ollama models, pass the model name (e.g., "qwen2.5:7b").
 // For HuggingFace models, pass with "hf.co/" prefix (e.g., "hf.co/TeichAI/Qwen3-4B").
 // Returns ModelInfo with ContextLimit, Size, and Parameters.
 // Returns an error if the model is not found or context limit cannot be determined.
-func GetModelInfo(model string) (*ModelInfo, error) {
+func GetModelInfoWithConfig(model string, cfg Config) (*ModelInfo, error) {
 	info := &ModelInfo{
 		Parameters: make(map[string]string),
 	}
 
 	if strings.Contains(model, "hf.co") {
-		if err := fetchHuggingFaceInfo(model, info); err != nil {
+		if err := fetchHuggingFaceInfo(model, info, cfg.HuggingFaceURL, cfg.Debug); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := fetchOllamaLibraryInfo(model, info); err != nil {
+		if err := fetchOllamaLibraryInfo(model, info, cfg.OllamaURL, cfg.Debug); err != nil {
 			return nil, err
 		}
 	}
@@ -45,14 +66,22 @@ func GetModelInfo(model string) (*ModelInfo, error) {
 }
 
 // fetchOllamaLibraryInfo fetches model info from Ollama's website.
-func fetchOllamaLibraryInfo(model string, info *ModelInfo) error {
+func fetchOllamaLibraryInfo(model string, info *ModelInfo, customURL string, debug bool) error {
 	modelName := model
 	if idx := strings.Index(modelName, ":"); idx > 0 {
 		modelName = modelName[:idx]
 	}
 	modelName = strings.TrimPrefix(modelName, "hf.co/")
 
-	url := fmt.Sprintf("https://ollama.com/library/%s/tags", modelName)
+	ollamaURL := "https://ollama.com/library"
+	if customURL != "" {
+		ollamaURL = customURL
+	}
+
+	url := fmt.Sprintf("%s/%s/tags", strings.TrimRight(ollamaURL, "/"), modelName)
+	if debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] Ollama URL: %s\n", url)
+	}
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -98,13 +127,21 @@ func fetchOllamaLibraryInfo(model string, info *ModelInfo) error {
 }
 
 // fetchHuggingFaceInfo fetches model info from HuggingFace API.
-func fetchHuggingFaceInfo(model string, info *ModelInfo) error {
+func fetchHuggingFaceInfo(model string, info *ModelInfo, customURL string, debug bool) error {
 	model = strings.TrimPrefix(model, "hf.co/")
 	if idx := strings.Index(model, ":"); idx > 0 {
 		model = model[:idx]
 	}
 
-	url := fmt.Sprintf("https://huggingface.co/api/models/%s", model)
+	huggingfaceURL := "https://huggingface.co/api/models"
+	if customURL != "" {
+		huggingfaceURL = customURL
+	}
+
+	url := fmt.Sprintf("%s/%s", strings.TrimRight(huggingfaceURL, "/"), model)
+	if debug {
+		fmt.Fprintf(os.Stderr, "[DEBUG] HuggingFace URL: %s\n", url)
+	}
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
