@@ -10,12 +10,18 @@ import (
 	"strings"
 )
 
+// ModelInfo contains information about a model.
 type ModelInfo struct {
-	ContextLimit int
-	Size         string
-	Parameters   map[string]string
+	ContextLimit int               // Context window size in tokens
+	Size         string            // Model size (e.g., "4.7GB")
+	Parameters   map[string]string // Additional parameters (e.g., quantization)
 }
 
+// GetModelInfo fetches model information from Ollama library or HuggingFace.
+// For Ollama models, pass the model name (e.g., "qwen2.5:7b").
+// For HuggingFace models, pass with "hf.co/" prefix (e.g., "hf.co/TeichAI/Qwen3-4B").
+// Returns ModelInfo with ContextLimit, Size, and Parameters.
+// Returns an error if the model is not found or context limit cannot be determined.
 func GetModelInfo(model string) (*ModelInfo, error) {
 	info := &ModelInfo{
 		Parameters: make(map[string]string),
@@ -38,6 +44,7 @@ func GetModelInfo(model string) (*ModelInfo, error) {
 	return info, nil
 }
 
+// fetchOllamaLibraryInfo fetches model info from Ollama's website.
 func fetchOllamaLibraryInfo(model string, info *ModelInfo) error {
 	modelName := model
 	if idx := strings.Index(modelName, ":"); idx > 0 {
@@ -90,6 +97,7 @@ func fetchOllamaLibraryInfo(model string, info *ModelInfo) error {
 	return nil
 }
 
+// fetchHuggingFaceInfo fetches model info from HuggingFace API.
 func fetchHuggingFaceInfo(model string, info *ModelInfo) error {
 	model = strings.TrimPrefix(model, "hf.co/")
 	if idx := strings.Index(model, ":"); idx > 0 {
