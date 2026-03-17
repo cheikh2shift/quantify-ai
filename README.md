@@ -1,6 +1,6 @@
 # Quantify AI
 
-A Go SDK and CLI to fetch model context limits from Ollama library and HuggingFace.
+A Go library and CLI to fetch model context limits from Ollama library and HuggingFace.
 
 ## Installation
 
@@ -29,54 +29,47 @@ quantify qwen2.5:7b
 # Size:           4.7GB
 
 # HuggingFace model
-quantify hf.co/TeichAI/Qwen3-4B-Thinking-2507-GPT-5.1-Codex-Max-Distill-GGUF:Q8_0
+quantify meta-llama/Llama-3.2-1B-Instruct
 # Output:
-# Model:          hf.co/TeichAI/Qwen3-4B-Thinking-2507-GPT-5.1-Codex-Max-Distill-GGUF:Q8_0
-# Context Limit:  262144
-# Parameters:
-#   quantization: bf16
+# Model:                    meta-llama/Llama-3.2-1B-Instruct
+# Context Limit:            128000
+# Size:                     1.3GB
 ```
 
-## Go SDK Usage
+## Library Usage
 
 ```go
 package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/cheikh2shift/quantify-ai"
 )
 
 func main() {
-	// Get context limit for an Ollama model
-	info, err := quantify.GetModelInfo("qwen2.5:7b")
+	// Fetch Ollama model info
+	model, err := quantify.FetchOllama("qwen2.5:7b")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	fmt.Printf("Context Limit: %d\n", info.ContextLimit)
+	fmt.Printf("Model: %s, Context Limit: %d, Size: %s\n", model.Name, model.ContextLimit, model.Size)
 
-	// Or HuggingFace model
-	info, err = quantify.GetModelInfo("hf.co/TeichAI/Qwen3-4B-Thinking")
+	// Fetch HuggingFace model info
+	model, err = quantify.FetchHuggingFace("meta-llama/Llama-3.2-1B-Instruct")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	fmt.Printf("Context Limit: %d\n", info.ContextLimit)
+	fmt.Printf("Model: %s, Context Limit: %d, Size: %s\n", model.Name, model.ContextLimit, model.Size)
 }
 ```
 
-## Supported Providers
+## Supported Models
 
-- **Ollama**: Pass model name (e.g., `qwen2.5:7b`, `llama3:8b`)
-- **HuggingFace**: Pass model with `hf.co/` prefix (e.g., `hf.co/TeichAI/Qwen3-4B`)
+- **Ollama**: All models available on Ollama library
+- **HuggingFace**: All models available on HuggingFace hub
 
-The SDK automatically detects the provider based on the model name.
+## License
 
-## ModelInfo Structure
-
-```go
-type ModelInfo struct {
-	ContextLimit int            // Context window size in tokens
-	Size         string         // Model size (e.g., "4.7GB")
-	Parameters   map[string]string  // Additional parameters (e.g., quantization)
-}
-```
+MIT
