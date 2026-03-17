@@ -1,6 +1,6 @@
 # Quantify AI
 
-A Go SDK and CLI to fetch model context limits from Ollama library and HuggingFace.
+A Go Library and CLI to fetch model context limits from Ollama library and HuggingFace.
 
 ## Installation
 
@@ -37,7 +37,7 @@ quantify hf.co/TeichAI/Qwen3-4B-Thinking-2507-GPT-5.1-Codex-Max-Distill-GGUF:Q8_
 #   quantization: bf16
 ```
 
-## Go SDK Usage
+## Go Library Usage
 
 ```go
 package main
@@ -69,7 +69,7 @@ func main() {
 - **Ollama**: Pass model name (e.g., `qwen2.5:7b`, `llama3:8b`)
 - **HuggingFace**: Pass model with `hf.co/` prefix (e.g., `hf.co/TeichAI/Qwen3-4B`)
 
-The SDK automatically detects the provider based on the model name.
+The Library automatically detects the provider based on the model name.
 
 ## ModelInfo Structure
 
